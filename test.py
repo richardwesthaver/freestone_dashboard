@@ -6,11 +6,16 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
+from datetime import datetime as dt
 
 # collect data
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
 raw_data = pd.ExcelFile(BytesIO(r.content))
 data_set = pd.read_excel(raw_data, sheet_name=None)
+
+# constants
+today = dt.today()
+
 #generate components
 def gen_graph(dataframe,id,title,y):
     return dcc.Graph(
@@ -23,6 +28,14 @@ def gen_graph(dataframe,id,title,y):
                 )
             ]
         )
+    )
+
+def gen_datePicker(id,min,max,)
+    return dcc.DatePickerRange(
+        id=id,
+        min_date_allowed=min,
+        max_date_allowed=max,
+        initial_visible_month=dt.today()
     )
 
 # start up app
