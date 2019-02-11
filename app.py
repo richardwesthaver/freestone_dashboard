@@ -59,9 +59,9 @@ odio dui."""
     className="mt-4",
 )
 
-app = dash.Dash('app', external_stylesheets=[dbc.themes.SANDSTONE])
+app = dash.Dash('app')
 
 app.layout = html.Div([navbar, body])
 
-if __name__ == "__main__":
-    app.run_server(debug=True)
+#if __name__ == "__main__":
+app.run_server(debug=True)

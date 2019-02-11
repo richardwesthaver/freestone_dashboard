@@ -42,6 +42,7 @@ app.layout = html.Div([
 )
 
 #generate components
+@app callback:
 def gen_graph(dataframe,id,title,y):
     return dcc.Graph(
         id=id,
