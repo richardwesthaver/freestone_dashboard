@@ -15,16 +15,17 @@ app = dash.Dash('test', external_stylesheets=[dbc.themes.SANDSTONE])
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
 raw_data = pd.ExcelFile(BytesIO(r.content))
 data_set = pd.read_excel(raw_data, sheet_name=None)
+millnames = ["", " K", " M"] # used to convert numbers
 
 # constants
 today = dt.today()
 # gen_graph(data_set['Enrollments'],'enrollments','enrollments','user_id')
 # app layout
-app.layout = html.Div([
+app.layout = [
     html.H1('Freestone Dashboard'),
-    html.Div([
+    html.Div(
         html.H2('Summary')
-    ]),
+    ),
     html.Div([
         html.H2('Key Metrics'),
         dcc.Graph(id='Enrollments'),
@@ -39,10 +40,9 @@ app.layout = html.Div([
 
     ])
 ]
-)
 
 #generate components
-@app callback:
+@app.callback(Output(), [input()])
 def gen_graph(dataframe,id,title,y):
     return dcc.Graph(
         id=id,
