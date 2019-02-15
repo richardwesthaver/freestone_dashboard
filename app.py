@@ -12,9 +12,8 @@ import os
 
 # start up app
 port = int(os.environ.get('PORT', 5000))
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE], port=port)
 server = app.server
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE], port=port, server=server)
-
 # collect data
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
 raw_data = pd.ExcelFile(BytesIO(r.content))
@@ -126,4 +125,4 @@ def update_catalog(start_date, end_date):
     return fig
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()
