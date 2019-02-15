@@ -10,7 +10,7 @@ import requests
 from dateutil import parser
 
 # start up app
-app = dash.Dash('scratch', external_stylesheets=[dbc.themes.SANDSTONE])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE])
 server = app.server
 
 # collect data
@@ -124,4 +124,4 @@ def update_catalog(start_date, end_date):
     return fig
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(debug=True)
