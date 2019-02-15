@@ -1,1 +1,1 @@
-web: gunicorn app:server --preload -t 120
+web: gunicorn app:app --log-file=- -t 120
