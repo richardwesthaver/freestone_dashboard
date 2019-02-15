@@ -12,7 +12,7 @@ import os
 
 # start up app
 port = int(os.environ.get('PORT', 5000))
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE], port=port)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE])
 server = app.server
 # collect data
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
