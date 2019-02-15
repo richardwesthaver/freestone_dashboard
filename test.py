@@ -8,20 +8,25 @@ import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
 import requests
+import plotly
 
 # start up app
-app = dash.Dash('test', external_stylesheets=[dbc.themes.SANDSTONE])
+app = dash.Dash('scratch', external_stylesheets=[dbc.themes.SANDSTONE])
 
 # collect data
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
 raw_data = pd.ExcelFile(BytesIO(r.content))
 
+catalog = pd.read_excel(raw_data, sheet_name='catalog')
 enrollments = pd.read_excel(raw_data, sheet_name='Enrollments')
 launches = pd.read_excel(raw_data, sheet_name='Launches')
 completions = pd.read_excel(raw_data, sheet_name='Completions')
 logins = pd.read_excel(raw_data, sheet_name='Logins')
 
 dataframes = [enrollments,launches,completions,logins]
+
+catalog['createdOn'] = pd.to_datetime(catalog['createdOn'])
+catalog['day'] = catalog['createdOn'].apply(lambda x: '%d/%d/%d' % (x.month, x.day, x.year))
 
 for df in dataframes:
     df['date'] = pd.to_datetime(df['date'],format='%d/%m/%Y')
@@ -36,23 +41,22 @@ def prevmonthdate(date):
         elif date.day > prevmonthdate:
                 prevmonthdate = date.replace(month=date.month-1, day=date.day-1)
     return prevmonthdate
+
 # gen_graph(data_set['Enrollments'],'enrollments','enrollments','user_id')
 # app layout
 app.layout = html.Div(children=[html.H1('Freestone Dashboard'),
              html.Div(html.H2('Summary')),
              html.Div([
                  html.H2('Key Metrics'),
-                 dcc.Graph(id='Enrollments',),
-                 dcc.Graph(id='Launches'),
-                 dcc.Graph(id='Completions'),
                  dcc.DatePickerRange(
                      id='date-picker',
-                     min_date_allowed=dt.today().replace(year=dt.today().year-3),
+                     min_date_allowed=dt.today().replace(year=dt.today().year - 3),
                      max_date_allowed=dt.today(),
                      initial_visible_month=dt.today(),
                      start_date=prevmonthdate(dt.today()),
                      end_date=dt.today()
-                 )
+                 ),
+                 dcc.Graph(id='key_metrics')
              ]),
              html.Div([
                  html.H2('Site Usage'),
@@ -62,29 +66,37 @@ app.layout = html.Div(children=[html.H1('Freestone Dashboard'),
              ])
              ])
 
-@app.callback(
-    dash.dependencies.Output('Enrollments','figure'),
+@app.callback(  #update key metrics
+    dash.dependencies.Output('key_metrics','figure'),
     [dash.dependencies.Input('date-picker', 'start_date'),
      dash.dependencies.Input('date-picker', 'end_date')])
-def update_figure(start_date, end_date):
-    enrollments_filtered = enrollments[(enrollments.date>start_date) & (enrollments.date<end_date)]
-    return {
-        'data': [go.Scatter(
-            x=enrollments_filtered['day'].unique(),
-            y=enrollments.groupby(enrollments.day).user_id.count(),
-            mode='lines'
-        )],
+def update_catalog(start_date, end_date):
+    catalog_filtered = catalog.loc[(catalog.createdOn>start_date) & (catalog.createdOn<end_date)]
+    fig = {
+        'data': [
+                go.Scatter(
+                    x=catalog_filtered['day'].unique(),
+                    y=catalog_filtered.groupby('createdOn').id.count(),
+                    name='Enrollments'
+            ),
+                go.Scatter(
+                    x=catalog_filtered['day'].unique(),
+                    y=catalog_filtered.groupby('completedOn').id.count(),
+                    name='Completions'
+                )
+        ],
         'layout': go.Layout(
             xaxis={
-                'title': 'x',
+                'title': 'Date',
                 'autorange': 'reversed'
             },
             yaxis={
-                'title': 'y'
-            },
-            hovermode='closest'
+                'title': 'Count'
+            }
         )
     }
+
+    return fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)
