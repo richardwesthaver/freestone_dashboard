@@ -1,1 +1,1 @@
-web: gunicorn app:server --log-file=- -t 120
+web: gunicorn app:app -t 120
