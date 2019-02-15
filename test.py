@@ -1,4 +1,4 @@
-from datetime import datetime as dt
+from datetime import datetime as dt, date as d
 from io import BytesIO
 import calendar as c
 import dash
@@ -8,29 +8,33 @@ import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
 import requests
+from dateutil import parser
 import plotly
 
 # start up app
 app = dash.Dash('scratch', external_stylesheets=[dbc.themes.SANDSTONE])
+app.scripts.config.serve_locally=True
 
 # collect data
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
 raw_data = pd.ExcelFile(BytesIO(r.content))
 
 catalog = pd.read_excel(raw_data, sheet_name='catalog')
-enrollments = pd.read_excel(raw_data, sheet_name='Enrollments')
-launches = pd.read_excel(raw_data, sheet_name='Launches')
-completions = pd.read_excel(raw_data, sheet_name='Completions')
-logins = pd.read_excel(raw_data, sheet_name='Logins')
+launches = pd.read_excel(raw_data, sheet_name='launches')
+logins = pd.read_excel(raw_data, sheet_name='logins')
 
-dataframes = [enrollments,launches,completions,logins]
+catalog['createdOn']=pd.to_datetime(catalog.createdOn)
+catalog['completedOn']=pd.to_datetime(catalog.completedOn)
+catalog = catalog.sort_values(by=['createdOn'])
+catalog['day'] = catalog.createdOn.dt.date
 
-catalog['createdOn'] = pd.to_datetime(catalog['createdOn'])
-catalog['day'] = catalog['createdOn'].apply(lambda x: '%d/%d/%d' % (x.month, x.day, x.year))
+launches['createdOn']=pd.to_datetime(launches.createdOn)
+launches = launches.sort_values(by=['createdOn'])
+launches['day'] = launches.createdOn.dt.date
 
-for df in dataframes:
-    df['date'] = pd.to_datetime(df['date'],format='%d/%m/%Y')
-    df['day']=df['date'].apply(lambda x: '%d/%d/%d' % (x.month, x.day, x.year))
+logins['createdOn']=pd.to_datetime(logins.createdOn)
+catalog['createdOn'] = catalog.createdOn.dt.date
+logins = logins.sort_values(by=['createdOn'])
 
 def prevmonthdate(date):
     try:
@@ -54,15 +58,31 @@ app.layout = html.Div(children=[html.H1('Freestone Dashboard'),
                      max_date_allowed=dt.today(),
                      initial_visible_month=dt.today(),
                      start_date=prevmonthdate(dt.today()),
-                     end_date=dt.today()
+                     end_date=dt.today(),
                  ),
                  dcc.Graph(id='key_metrics')
              ]),
              html.Div([
                  html.H2('Site Usage'),
-                 dcc.Graph(id='Logins'),
+                 dcc.Graph(id='logins',
+                           figure=go.Figure(
+                               data=[go.Scatter(
+                                   x=logins.createdOn,
+                                   y=logins['count'])],
+                               layout=go.Layout(
+                                   title='Logins',
+                                   xaxis={'title':'Date'},
+                                   yaxis={'title':'Logins'}
+                               )
+                           )),
                  html.Table(id='site_activity'),
-                 dcc.Graph(id='device_usage')
+                 dcc.Graph(id='device_usage',
+                           figure=go.Figure(
+                               data=[go.Pie(labels=['Desktop', 'Mobile', 'Tablet'],
+                                            values=['42344', '1864', '2390'])],
+                               layout=go.Layout(
+                                   title='Device Usage')
+                           ))
              ])
              ])
 
@@ -71,24 +91,31 @@ app.layout = html.Div(children=[html.H1('Freestone Dashboard'),
     [dash.dependencies.Input('date-picker', 'start_date'),
      dash.dependencies.Input('date-picker', 'end_date')])
 def update_catalog(start_date, end_date):
-    catalog_filtered = catalog.loc[(catalog.createdOn>start_date) & (catalog.createdOn<end_date)]
+    start_date = dt.date(parser.parse(start_date))
+    end_date = dt.date(parser.parse(end_date))
+    catalog_filtered = catalog.loc[(catalog.day>start_date) & (catalog.day<end_date)]
+    launches_filtered = launches.loc[(launches.day>start_date) & (launches.day<end_date)]
     fig = {
         'data': [
                 go.Scatter(
-                    x=catalog_filtered['day'].unique(),
-                    y=catalog_filtered.groupby('createdOn').id.count(),
+                    x=catalog_filtered.day.unique(),
+                    y=catalog_filtered.groupby(catalog.day).rand.count(),
                     name='Enrollments'
             ),
                 go.Scatter(
-                    x=catalog_filtered['day'].unique(),
-                    y=catalog_filtered.groupby('completedOn').id.count(),
+                    x=catalog_filtered.day.unique(),
+                    y=catalog_filtered.groupby(catalog.day).completedOn.count(),
                     name='Completions'
+                ),
+                go.Scatter(
+                    x=launches_filtered.day.unique(),
+                    y=launches_filtered.groupby(launches.day).createdOn.count(),
+                    name='Launches'
                 )
         ],
         'layout': go.Layout(
             xaxis={
                 'title': 'Date',
-                'autorange': 'reversed'
             },
             yaxis={
                 'title': 'Count'
