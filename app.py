@@ -8,9 +8,11 @@ import pandas as pd
 import plotly.graph_objs as go
 import requests
 from dateutil import parser
+import os
 
 # start up app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE])
+port = int(os.environ.get('PORT', 5000))
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE], port=port, server=server)
 server = app.server
 
 # collect data
