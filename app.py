@@ -11,7 +11,7 @@ from dateutil import parser
 
 # start up app
 app = dash.Dash('scratch', external_stylesheets=[dbc.themes.SANDSTONE])
-app.scripts.config.serve_locally=True
+server = app.server
 
 # collect data
 r = requests.get('https://docs.google.com/spreadsheets/d/1pZp7xbIEVOrM8Jk6xVwovIBe2I4sdv8u2h9RTwmiMZE/export?format=xlsx')
@@ -124,4 +124,4 @@ def update_catalog(start_date, end_date):
     return fig
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()

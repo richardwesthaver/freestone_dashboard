@@ -7,3 +7,4 @@ pandas
 datetime
 plotly
 python-dateutil
+gunicorn
