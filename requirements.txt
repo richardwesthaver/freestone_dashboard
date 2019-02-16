@@ -8,3 +8,4 @@ datetime
 plotly
 python-dateutil
 gunicorn
+xlrd
