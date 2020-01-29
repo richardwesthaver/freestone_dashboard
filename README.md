@@ -3,4 +3,4 @@ run it:
 + python app.py
 + surf https://localhost:8050
 
-[[screenshot][./screenshot.png]]
+![screenshot](screenshot.png)
